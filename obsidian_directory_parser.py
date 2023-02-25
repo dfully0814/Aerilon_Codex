@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import markdown
+import chardet
 
 CHILD_DIRECTORIES = [
     "Characters",
@@ -10,9 +11,10 @@ CHILD_DIRECTORIES = [
     "NPCs",
     "Organizations",
     "Vessels",
-    "Session Recaps",
-    "Uncharted North"
+    "Session Recaps"
 ]
+
+pages_dict = {}
 
 
 def find_dir_name(file_path):
@@ -21,37 +23,31 @@ def find_dir_name(file_path):
     return file_name
 
 
-def find_page_names(parent_directory, directories):
-    # Collection for adding unique matches in order to create these in the notion database later
-    page_names = set()
-
-    pages = {}
+def find_page_names():
+    # a collection for adding unique matches in order to create these in the notion database later
+    page_names_with_directory_names = {}
 
     # Define the regular expression pattern to search for
-    pattern = re.compile(r'\[\[(?!.*\.(?:jpg|png|webp|bmp|jpeg)).*?\]\]')
-
-    if __name__ == "__main__":
-        if len(sys.argv) != 2:
-            print("Error: missing parent directory path argument.")
-            print("Usage: python script.py <parent_directory_path>")
-            sys.exit(1)
-
-    for dir_name in directories:
-        dir_path = os.path.join(parent_directory, dir_name)
-        for dir_path, dir_names, file_names in os.walk(dir_path):
+    pattern = re.compile(r'\[\[.*?\]\]')
+    
+    for child_dir_name in CHILD_DIRECTORIES:
+        child_dir_path = os.path.join("/Users/d.fuller/Library/CloudStorage/OneDrive-Personal/Aerilon_Vault/Codex", child_dir_name)
+        for dir_path, directories, file_names in os.walk(child_dir_path):
             for file_name in file_names:
                 file_path = os.path.join(dir_path, file_name)
                 if (os.path.isfile(file_path)):
-                    with open(file_path, 'r', encoding="utf-8") as file:
-                        for line in file:
-                            for match in re.findall(pattern, line):
-                                page_name = match[2:-2]
-                                pages.update(
-                                    {
-                                        page_name: find_markdown_file(parent_directory, page_name)
-                                    }
-                                )
-    print(pages.get('Thryn'))
+                    with open(file_path, 'rb') as file:
+                        file_contents_binary = file.read()
+                        file_contents_decoded = file_contents_binary.decode(chardet.detect(file_contents_binary))
+                        for match in re.findall(pattern, file_contents_decoded):
+                            match = match[2:-2]
+                            page_names_with_directory_names.update(
+                                {
+                                    match: child_dir_name
+                                }
+                            )
+                            
+    return page_names_with_directory_names
 
 
 def find_markdown_file(directory, filename):
@@ -62,18 +58,12 @@ def find_markdown_file(directory, filename):
             try:
                 with open(os.path.join(root, filename), 'r') as file:
                     page_text = file.read()
+                    return page_text
             except FileNotFoundError:
                 print(f"{filename} not found.")
-            
-            return markdown.markdown(page_text)
-
-    # If the file is not found, return None
-    return None
 
 
 def to_html(page_text):
     return markdown.markdown(page_text)
 
-
-PARENT_DIRECTORY = sys.argv[1]
-find_page_names(PARENT_DIRECTORY, CHILD_DIRECTORIES)
+print(find_page_names())
