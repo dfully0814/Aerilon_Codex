@@ -1,10 +1,15 @@
 import requests
 import json
+from notion_page import NotionPage
 
 DATABASE_ID = "dc8f63b3bc874a93818676af32fbad0e"
 APIKEY = "secret_iYKxuQGT0MZ9Y0XCJPf5GL7NKrb0a0NoewxMkjPUEao"
 
 PAGES_URL = "https://api.notion.com/v1/pages"
+
+def get_page(metadata) -> NotionPage:
+    """Gets an instance of a notion page"""
+    return NotionPage(metadata, DATABASE_ID)
 
 def get_request_headers():
     return {
@@ -33,5 +38,4 @@ def get_request_body():
         }
     }
 
-response = requests.post(PAGES_URL, json=get_request_body(), headers=get_request_headers())
-print(response.text)
+# response = requests.post(PAGES_URL, json=get_request_body(), headers=get_request_headers())
